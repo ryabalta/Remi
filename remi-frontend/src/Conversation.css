@@ -1,0 +1,25 @@
+.Conversation {
+    overflow-y: auto;
+    /* Add scrolling */
+    flex: 1;
+    padding: 10px;
+}
+
+.message {
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    max-width: 70%;
+}
+
+.message.user {
+    background-color: #DCF8C6;
+    /* Green for user */
+    align-self: flex-start;
+}
+
+.message.remi {
+    background-color: #ECE5DD;
+    /* Gray for Remi */
+    align-self: flex-end;
+}
