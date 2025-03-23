@@ -23,8 +23,8 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-ELEVEN_API_KEY = "sk_8fe5f11d548416473f8176d3b3e394ac2644f21f616f26c1"
-GEMINI_API_KEY = "AIzaSyAV1j1IsVCLbcuQHctjBPmXeQacQHGJ-78"
+ELEVEN_API_KEY = #API KEY
+GEMINI_API_KEY =  #API KEY
 
 # Add ffmpeg path to system PATH
 os.environ["PATH"] += os.pathsep + r"C:\\Users\\antoi\\Downloads\\ffmpeg-7.1.1-essentials_build\\bin"
