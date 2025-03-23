@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Assistant</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --error-color: #f44336;
+            --success-color: #4CAF50;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .progress-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 40px;
+        }
+
+        .progress-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary-color) var(--progress)%, transparent var(--progress)%);
+        }
+
+        .progress-circle::before {
+            content: '';
+            position: absolute;
+            width: 90%;
+            height: 90%;
+            background-color: var(--background-color);
+            border-radius: 50%;
+            top: 5%;
+            left: 5%;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .message-area {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            min-height: 100px;
+        }
+
+        .message {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .difficulty-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+            background-color: var(--secondary-color);
+        }
+
+        .voice-input {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .mic-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .mic-button:hover {
+            transform: scale(1.1);
+        }
+
+        .mic-button.recording {
+            background-color: var(--error-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        .mic-icon {
+            width: 30px;
+            height: 30px;
+            fill: white;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .start-button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .start-button:hover {
+            transform: scale(1.05);
+            background-color: #45a049;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="progress-container">
+            <div class="progress-circle"></div>
+            <div class="progress-text">0%</div>
+        </div>
+        
+        <div class="message-area">
+            <div class="message">Welcome to the Memory Assistant!</div>
+            <div class="difficulty-badge">Easy</div>
+        </div>
+
+        <div class="voice-input">
+            <button class="mic-button" id="micButton">
+                <svg class="mic-icon" viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16c-2.47 0-4.52-1.8-4.93-4.15-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
+                </svg>
+            </button>
+        </div>
+
+        <button class="start-button" id="startButton">Start Session</button>
+    </div>
+
+    <script>
+        let recognition = null;
+        let isRecording = false;
+        let currentQuestion = null;
+        let progress = 0;
+        let correctAnswers = 0;
+
+        // Initialize speech recognition
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = function(event) {
+                const answer = event.results[0][0].transcript;
+                checkAnswer(answer);
+            };
+
+            recognition.onend = function() {
+                isRecording = false;
+                document.getElementById('micButton').classList.remove('recording');
+            };
+        }
+
+        // Initialize speech synthesis
+        const synth = window.speechSynthesis;
+        let speaking = false;
+
+        function speak(text) {
+            if (speaking) {
+                synth.cancel();
+            }
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.onend = () => {
+                speaking = false;
+            };
+            speaking = true;
+            synth.speak(utterance);
+        }
+
+        // Update progress circle
+        function updateProgress(value) {
+            progress = value;
+            document.querySelector('.progress-circle').style.setProperty('--progress', `${value}%`);
+            document.querySelector('.progress-text').textContent = `${value}%`;
+        }
+
+        // Update difficulty badge
+        function updateDifficulty(difficulty) {
+            const badge = document.querySelector('.difficulty-badge');
+            badge.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+        }
+
+        // Handle microphone button click
+        document.getElementById('micButton').addEventListener('click', function() {
+            if (!recognition) {
+                alert('Speech recognition is not supported in your browser.');
+                return;
+            }
+
+            if (!isRecording) {
+                recognition.start();
+                isRecording = true;
+                this.classList.add('recording');
+            } else {
+                recognition.stop();
+            }
+        });
+
+        // Start game session
+        document.getElementById('startButton').addEventListener('click', async function() {
+            this.classList.add('hidden');
+            const response = await fetch('/start_game', {
+                method: 'POST'
+            });
+            const data = await response.json();
+            
+            if (data.audio) {
+                const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
+                await audio.play();
+            }
+            
+            currentQuestion = data.first_question;
+            document.querySelector('.message').textContent = currentQuestion;
+            speak(currentQuestion);
+        });
+
+        // Check answer
+        async function checkAnswer(answer) {
+            const response = await fetch('/check_answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ answer })
+            });
+
+            const data = await response.json();
+            
+            if (data.error) {
+                console.error(data.error);
+                return;
+            }
+
+            // Update UI
+            document.querySelector('.message').textContent = data.feedback;
+            updateProgress(data.progress);
+            updateDifficulty(data.difficulty);
+
+            // Play audio feedback
+            if (data.audio) {
+                const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
+                await audio.play();
+            }
+
+            // Update question if available
+            if (data.next_question) {
+                currentQuestion = data.next_question;
+                setTimeout(() => {
+                    document.querySelector('.message').textContent = currentQuestion;
+                    speak(currentQuestion);
+                }, 3000);
+            }
+
+            // Handle session completion
+            if (data.session_complete) {
+                setTimeout(() => {
+                    const finalMessage = `Great job! You've completed the session with ${data.correct_answers} correct answers.`;
+                    document.querySelector('.message').textContent = finalMessage;
+                    speak(finalMessage);
+                    document.getElementById('startButton').classList.remove('hidden');
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html> 
